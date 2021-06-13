@@ -96,7 +96,6 @@ public class Processing {
                     boundingBoxes[id].setRightBottomX(x + 1);
                 if (boundingBoxes[id].getRightBottomY() == -1 || y > boundingBoxes[id].getRightBottomY())
                     boundingBoxes[id].setRightBottomY(y + 1);
-
             }
         }
 
@@ -112,15 +111,13 @@ public class Processing {
             }
         }
 
-
         try {
             FileWriter myWriter = new FileWriter("output.txt");
             myWriter.write("ID\t\tCentroid\t\tBounding Box\t\tEquivalent diameter\n");
             for (int i = 0; i < 256; i++) {
 
-                myWriter.write(i + "\t[" + centroids[i].X + ",\t" + centroids[i].Y + "]\t[" + boundingBoxes[i].getLeftTopX() + ",\t" + boundingBoxes[i].getLeftTopY() + ",\t" + boundingBoxes[i].Height + "]\t\t" + equivDiameters[i] + "\n");
+                myWriter.write(i + "\t[" + centroids[i].X + ",\t" + centroids[i].Y + "]\t[" + boundingBoxes[i].getLeftTopX() + ",\t" + boundingBoxes[i].getLeftTopY() + ",\t" + boundingBoxes[i].Height + ",\t" + boundingBoxes[i].Height + "]\t\t" + equivDiameters[i] + "\n");
             }
-
             myWriter.close();
             System.out.println("Successfully wrote to the file.");
         } catch (IOException e) {
@@ -129,7 +126,6 @@ public class Processing {
         }
 
     }
-
 
     public void kirschFiltration() {
 
@@ -145,7 +141,6 @@ public class Processing {
             } catch (IOException e) {
                 System.out.println("Exception occured :" + e.getMessage());
             }
-            System.out.println("Images were written succesfully.");
         }
         if (input == 1) {
             BufferedImage redBitmap = getOneChannelImage(result, 0);
@@ -162,9 +157,10 @@ public class Processing {
                 ImageIO.write(greenBitmap, "png", g);
                 ImageIO.write(blueBitmap, "png", b);
             } catch (IOException e) {
-                System.out.println(e);
+                System.out.println("Exception occured :" + e.getMessage());
             }
         }
+        System.out.println("Images were written succesfully.");
     }
 
     private BufferedImage getOneChannelImage(BufferedImage rgbImage, int channel) {
@@ -264,20 +260,16 @@ public class Processing {
         return result;
     }
 
-    public void ClosingLinear() {
-//        BufferedImage inputImg;
-//        File f = new File("D:\\DEV\\GitHub\\ImageProcesing\\src\\main\\resources\\cm.tif");
-//        inputImg = ImageIO.read(f);
-
+    public void closingLinear() {
         BufferedImage outputImage = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(),
                 BufferedImage.TYPE_INT_RGB);
         BufferedImage tempImage = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(),
                 BufferedImage.TYPE_INT_RGB);
 
         int SE_length, SE_angle;
-        System.out.println("What is the length of the structuring element (SE)? ");
+        System.out.println("Give the length of the structuring element (SE)? ");
         SE_length = sc.nextInt();
-        System.out.println("What is the angle of the SE? ");
+        System.out.println("Give the angle of the SE? ");
         SE_angle = sc.nextInt();
 
         int[][] mask = createLinearSE(SE_length, SE_angle);
@@ -299,7 +291,7 @@ public class Processing {
 
         for (int kz = se.length / 2 + 1; kz < inputImage.getHeight() - se.length / 2 - 1; kz++) {
             for (int kx = se.length / 2 + 1; kx < inputImage.getWidth() - se.length / 2 - 1; kx++) {
-                int max = GetMaxNeighborhoodVal(inputImage, se, kx, kz);
+                int max = getMaxNeighborhoodVal(inputImage, se, kx, kz);
                 Color color = new Color(max, max, max);
                 int rgb = color.getRGB();
                 outputImage.setRGB(kx,kz,rgb);
@@ -307,16 +299,16 @@ public class Processing {
         }
     }
 
-    private int GetMaxNeighborhoodVal(BufferedImage inputImage,int[][] se , int kx, int kz) {
+    private int getMaxNeighborhoodVal(BufferedImage inputImage,int[][] se , int kx, int kz) {
         int max = 0, temp;
-        int posX, posY;
+        int x, y;
 
         for (int i = 0; i < se.length; i++) {
-            posX = kx + i - maskCorrectX;
+            x = kx + i - maskCorrectX;
             for (int j = 0; j < se[i].length; j++) {
-                posY = kz + j - maskCorrectY;
-                if (se[i][j] == 1 && isInImage(inputImage, posX, posY)) {
-                    Color color = new Color(inputImage.getRGB(posX,posY));
+                y = kz + j - maskCorrectY;
+                if (se[i][j] == 1 && x >=0 && y >= 0 && x < inputImage.getWidth() && y < inputImage.getHeight()) {
+                    Color color = new Color(inputImage.getRGB(x,y));
                     temp = color.getRed();
                     if (temp > max)
                         max = temp;
@@ -330,7 +322,7 @@ public class Processing {
         for (int kz = se.length / 2 + 1; kz < inputImage.getHeight() - se.length / 2 - 1; kz++) {
             for (int kx = se.length/ 2 + 1; kx < inputImage.getWidth() - se.length / 2 - 1; kx++) {
 
-                int min = GetMinNeighborhoodVal(inputImage, se, kx, kz);
+                int min = getMinNeighborhoodVal(inputImage, se, kx, kz);
                 Color color = new Color(min, min, min);
                 int rgb = color.getRGB();
                 outputImage.setRGB(kx,kz,rgb);
@@ -339,15 +331,15 @@ public class Processing {
         }
     }
 
-    private int GetMinNeighborhoodVal(BufferedImage inputImage,int[][] se , int kx, int kz) {
+    private int getMinNeighborhoodVal(BufferedImage inputImage,int[][] se , int kx, int kz) {
         int min = 255, temp;
-        int posX, posY;
+        int x, y;
         for (int i = 0; i < se.length; i++) {
-            posX = kx + i - maskCorrectX;
+            x = kx + i - maskCorrectX;
             for (int j = 0; j < se[i].length; j++) {
-                posY = kz + j - maskCorrectY;
-                if (se[i][j] == 1 && isInImage(inputImage, posX, posY)) {
-                    Color color = new Color(inputImage.getRGB(posX,posY));
+                y = kz + j - maskCorrectY;
+                if (se[i][j] == 1 && x >=0 && y >= 0 && x < inputImage.getWidth() && y < inputImage.getHeight()) {
+                    Color color = new Color(inputImage.getRGB(x,y));
                     temp = color.getRed();
 
                     if (temp < min)
@@ -356,11 +348,6 @@ public class Processing {
             }
         }
         return min;
-    }
-
-
-    private Boolean isInImage(BufferedImage inputImage, int x, int y) {
-        return x >= 0 && y >= 0 && x < inputImage.getWidth() && y < inputImage.getHeight();
     }
 
     private static class Pair{
@@ -379,8 +366,7 @@ public class Processing {
             System.exit(1);
         }
         int[][] mask = new int[length-1][length-1];
-        double MY_PI = 3.1415926535898;
-        double angle = (userAngle % 180) * MY_PI / 180;
+        double angle = (userAngle % 180) * Math.PI / 180;
         int x = (int) Math.round((float)(length - 1) / 2 * Math.cos(angle));
         int y = (int) Math.round((float)(length - 1) / 2 * Math.sin(angle));
 
@@ -401,22 +387,21 @@ public class Processing {
     private ArrayList<Pair> bresenham(int x1, int y1, int x2, int y2) {
         ArrayList<Pair> pointList= new ArrayList<>();
         int m_new = 2 * (y2 - y1);
-        int slope_error_new = m_new - (x2 - x1);
+        int slope_error = m_new - (x2 - x1);
         for (int x = x1, y = y1; x <= x2; x++)
         {
             pointList.add(new Pair(x, y));
-            slope_error_new += m_new;
-            if (slope_error_new >= 0)
+            slope_error += m_new;
+            if (slope_error >= 0)
             {
                 y++;
-                slope_error_new -= 2 * (x2 - x1);
+                slope_error -= 2 * (x2 - x1);
             }
         }
         return pointList;
     }
 
-
-   public void GeodeticDistanceMap(){
+    public void geodeticDistanceMap(){
 
         int width = inputImage.getWidth(), height = inputImage.getHeight();
         int x1, y1;
@@ -440,9 +425,9 @@ public class Processing {
         int iter = 0, prevPixels = 1, currPixels = 0;
 
         while (currPixels - prevPixels != 0) {
-            binaryDilation(SE, iter);
+            dilation(SE, iter);
             prevPixels = currPixels;
-            currPixels = AndMask(inputImage);
+            currPixels = andMask(inputImage);
             ++iter;
         }
         System.out.println("Iterations: " + iter);
@@ -453,9 +438,11 @@ public class Processing {
 
     }
 
-    private void binaryDilation(int[][] se, int iter) {
-        int[][] newMarker = marker.clone();
-
+    private void dilation(int[][] se, int iter) {
+        int[][] newMarker = new int[marker.length][marker[0].length];
+        for (int i = 0; i < marker.length; i++) {
+            newMarker[i] = marker[i].clone();
+        }
         int posX, posY;
         boolean flag;
         for (int kx = 3; kx < newMarker.length - 3; kx++) {
@@ -481,7 +468,7 @@ public class Processing {
         }
     }
 
-    private int AndMask(BufferedImage image) {
+    private int andMask(BufferedImage image) {
         int pixelCount = 0;
         for (int kx = 3; kx < marker.length - 3; kx++) {
             for (int kz = 3; kz < marker[kx].length - 3; kz++) {
@@ -509,12 +496,10 @@ public class Processing {
                     max = anInt;
             }
         }
-
-        // normalize
         double fraction = -255 / (double)(min - max);
         for (int kx = 0; kx < marker.length; kx++) {
             for (int kz = 0; kz < marker[kx].length; kz++) {
-                marker[kx][kz] = (int) (fraction * (marker[kx][kz] - min));	// normalization equation
+                marker[kx][kz] = (int) (fraction * (marker[kx][kz] - min));
             }
         }
     }
